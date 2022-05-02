@@ -1,0 +1,106 @@
+<?php
+
+declare(strict_types=1);
+
+namespace PiotrekR\SimpleHydrator;
+
+use DateTimeImmutable;
+use ReflectionException;
+use ReflectionObject;
+use ReflectionProperty;
+
+final class Hydrator
+{
+    private array $reflections = [];
+
+    public function set(
+        object $model,
+        string $name,
+        array $data,
+        string $key,
+        Type $type,
+        bool $isRequired,
+        string|array|callable $param = null,
+    ): Hydrator {
+        if (!array_key_exists($key, $data) || $data[$key] === null) {
+            if ($isRequired) {
+                throw new HydratorException('Required field ' . $key . ' not found');
+            }
+            return $this;
+        }
+
+        $value = $this->cast($data[$key], $type, $param);
+
+        try {
+            $this->reflectProperty($model, $name)->setValue($model, $value);
+        } catch (ReflectionException $e) {
+            throw new HydratorException(
+                sprintf('Property "%s" not found in "%s"', $name, get_debug_type($model)),
+                0,
+                $e,
+            );
+        }
+
+        return $this;
+    }
+
+    private function reflectProperty(object $model, string $name): ReflectionProperty
+    {
+        $objectId = spl_object_id($model);
+        if (array_key_exists($objectId, $this->reflections)) {
+            $refObject = $this->reflections[$objectId]['object'];
+        } else {
+            $this->reflections[$objectId] = [
+                'object' => ($refObject = new ReflectionObject($model)),
+                'props' => [],
+            ];
+        }
+
+        if (array_key_exists($name, $this->reflections[$objectId]['props'])) {
+            $refProperty = $this->reflections[$objectId]['props'][$name];
+        } else {
+            $refProperty = $this->reflections[$objectId]['props'][$name] = $refObject->getProperty($name);
+        }
+
+        return $refProperty;
+    }
+
+    private function cast(mixed $value, Type $type, string|array|callable $param = null): mixed
+    {
+        return match ($type) {
+            Type::BOOL => (bool)$value,
+            Type::DATETIME => $this->castDatetime($value),
+            Type::ENUM => $this->castEnum($value, $param),
+            Type::FLOAT => (float)$value,
+            Type::INTEGER => (int)$value,
+            Type::RAW => $value,
+            Type::STRING => (string)$value,
+        };
+    }
+
+    public function castDatetime(mixed $value): DateTimeImmutable
+    {
+        if (is_numeric($value)) {
+            return (new DateTimeImmutable())->setTimestamp((int)$value);
+        }
+
+        return new DateTimeImmutable($value);
+    }
+
+    public function castEnum(mixed $value, string|array|callable $param = null): mixed
+    {
+        if (!is_string($param)) {
+            throw new HydratorException(
+                sprintf('$param must be string in %s, it was %s', __METHOD__, get_debug_type($param)),
+            );
+        }
+
+        if (!enum_exists($param)) {
+            throw new HydratorException(
+                sprintf('$param must be an existing enum class, it was "%s"', $param),
+            );
+        }
+
+        return call_user_func([$param, 'from'], $value);
+    }
+}

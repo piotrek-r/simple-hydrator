@@ -9,7 +9,7 @@ use ReflectionException;
 use ReflectionObject;
 use ReflectionProperty;
 
-final class Hydrator
+final class SimpleHydrator
 {
     private array $reflections = [];
 
@@ -21,10 +21,10 @@ final class Hydrator
         Type $type,
         bool $isRequired,
         string|array|callable $param = null,
-    ): Hydrator {
+    ): SimpleHydrator {
         if (!array_key_exists($key, $data) || $data[$key] === null) {
             if ($isRequired) {
-                throw new HydratorException('Required field ' . $key . ' not found');
+                throw new SimpleHydratorException('Required field ' . $key . ' not found');
             }
             return $this;
         }
@@ -34,7 +34,7 @@ final class Hydrator
         try {
             $this->reflectProperty($model, $name)->setValue($model, $value);
         } catch (ReflectionException $e) {
-            throw new HydratorException(
+            throw new SimpleHydratorException(
                 sprintf('Property "%s" not found in "%s"', $name, get_debug_type($model)),
                 0,
                 $e,
@@ -90,13 +90,13 @@ final class Hydrator
     public function castEnum(mixed $value, string|array|callable $param = null): mixed
     {
         if (!is_string($param)) {
-            throw new HydratorException(
+            throw new SimpleHydratorException(
                 sprintf('$param must be string in %s, it was %s', __METHOD__, get_debug_type($param)),
             );
         }
 
         if (!enum_exists($param)) {
-            throw new HydratorException(
+            throw new SimpleHydratorException(
                 sprintf('$param must be an existing enum class, it was "%s"', $param),
             );
         }

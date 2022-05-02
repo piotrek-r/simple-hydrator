@@ -6,6 +6,6 @@ namespace PiotrekR\SimpleHydrator;
 
 use Exception;
 
-class HydratorException extends Exception
+class SimpleHydratorException extends Exception
 {
 }

@@ -19,7 +19,7 @@ final class SimpleHydrator
         array $data,
         string $key,
         Type $type,
-        bool $isRequired,
+        bool $isRequired = true,
         string|array|callable $param = null,
     ): SimpleHydrator {
         if (!array_key_exists($key, $data)) {

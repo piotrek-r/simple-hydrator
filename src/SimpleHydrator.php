@@ -22,14 +22,14 @@ final class SimpleHydrator
         bool $isRequired,
         string|array|callable $param = null,
     ): SimpleHydrator {
-        if (!array_key_exists($key, $data) || $data[$key] === null) {
+        if (!array_key_exists($key, $data)) {
             if ($isRequired) {
                 throw new SimpleHydratorException('Required field ' . $key . ' not found');
             }
             return $this;
         }
 
-        $value = $this->cast($data[$key], $type, $param);
+        $value = $data[$key] !== null ? $this->cast($data[$key], $type, $param) : null;
 
         try {
             $this->reflectProperty($model, $name)->setValue($model, $value);

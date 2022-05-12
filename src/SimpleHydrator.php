@@ -73,6 +73,7 @@ final class SimpleHydrator
             Type::ENUM => $this->castEnum($value, $param),
             Type::FLOAT => (float)$value,
             Type::INTEGER => (int)$value,
+            Type::JSON => $this->castJson($value),
             Type::RAW => $value,
             Type::STRING => (string)$value,
         };
@@ -102,5 +103,16 @@ final class SimpleHydrator
         }
 
         return call_user_func([$param, 'from'], $value);
+    }
+
+    public function castJson(string $value): mixed
+    {
+        $result = json_decode($value, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new SimpleHydratorException('JSON error: ' . json_last_error_msg(), json_last_error());
+        }
+
+        return $result;
     }
 }

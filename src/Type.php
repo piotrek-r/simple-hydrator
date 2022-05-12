@@ -11,6 +11,7 @@ enum Type
     case ENUM;
     case FLOAT;
     case INTEGER;
+    case JSON;
     case RAW;
     case STRING;
 }

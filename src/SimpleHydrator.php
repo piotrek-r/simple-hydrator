@@ -69,6 +69,7 @@ final class SimpleHydrator
     {
         return match ($type) {
             Type::BOOL => (bool)$value,
+            Type::CALLBACK => $this->castWithCallback($value, $param),
             Type::DATETIME => $this->castDatetime($value),
             Type::ENUM => $this->castEnum($value, $param),
             Type::FLOAT => (float)$value,
@@ -88,7 +89,7 @@ final class SimpleHydrator
         return new DateTimeImmutable($value);
     }
 
-    public function castEnum(mixed $value, string|array|callable $param = null): mixed
+    public function castEnum(mixed $value, string|array|callable|null $param = null): mixed
     {
         if (!is_string($param)) {
             throw new SimpleHydratorException(
@@ -114,5 +115,16 @@ final class SimpleHydrator
         }
 
         return $result;
+    }
+
+    private function castWithCallback(mixed $value, callable|array|string|null $param): mixed
+    {
+        if (!is_callable($param)) {
+            throw new SimpleHydratorException(
+                sprintf('$param must be callable in %s, it was %s', __METHOD__, get_debug_type($param)),
+            );
+        }
+
+        return $param($value);
     }
 }

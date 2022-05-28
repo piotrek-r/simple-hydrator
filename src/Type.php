@@ -7,6 +7,7 @@ namespace PiotrekR\SimpleHydrator;
 enum Type
 {
     case BOOL;
+    case CALLBACK;
     case DATETIME;
     case ENUM;
     case FLOAT;
